@@ -1,0 +1,11 @@
+docker run -it \
+             --rm \
+             --network=host \
+             --cpuset-cpus=<cpu-id-list, optional> \
+             --cpuset-mems=<memory-node, optional> \
+             vllm-cpu-env
+
+
+docker run -it --rm --network=host vllm-cpu-env
+
+docker run --runtime nvidia --gpus all -v ~/.cache/huggingface:/root/.cache/huggingface --env "HUGGING_FACE_HUB_TOKEN=<secret>" -p 8000:8000 --ipc=host vllm/vllm-openai:latest --model mistralai/Mistral-7B-v0.1

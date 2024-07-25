@@ -1,0 +1,20 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"python.pythonPath": "${workspaceFolder:backend}/venv/Scripts/python",
+		"python.linting.pylintEnabled": true,
+		"python.linting.enabled": true,
+		"python.linting.pylintPath": "${workspaceFolder:backend}/venv/bin/pylint",
+		"eslint.nodePath": "${workspaceFolder:frontend}/node_modules"
+	},
+	"extensions": {
+		"recommendations": [
+			"ms-python.python",
+			"dbaeumer.vscode-eslint"
+		]
+	}
+}
