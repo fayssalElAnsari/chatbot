@@ -1,13 +1,9 @@
 import os
 from typing import Optional
 
-DB_HOST = os.getenv('DB_HOST', 'localhost')
-DB_PORT = os.getenv('DB_PORT', '27017')
-LLM_BASE_URL = os.getenv('LLM_BASE_URL', 'http://localhost:11434')
+
 HF_TOKEN: Optional[str] = os.getenv("HUGGING_FACE_TOKEN", "your_huggingface_token")
 END_POINT_URL = "https://t8vw8vnwh9jwyf7r.us-east-1.aws.endpoints.huggingface.cloud"
-
-MONGO_URI = f"{DB_HOST}:{DB_PORT}"
 
 RE_INDEX = True
 REQUIRED_EXTS = [".md", ".txt", ".html", ".htm", ".pdf", ".doc"]
