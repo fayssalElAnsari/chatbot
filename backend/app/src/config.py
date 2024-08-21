@@ -5,7 +5,7 @@ from llama_index.llms.ollama import Ollama
 from llama_index.storage.docstore.mongodb import MongoDocumentStore
 from llama_index.storage.index_store.mongodb import MongoIndexStore
 from llama_index.core.node_parser import SentenceSplitter
-from src.constants import MONGO_URI, LLM_BASE_URL, RE_INDEX, REQUIRED_EXTS, INPUT_DIR, qa_prompt_str, refine_prompt_str
+from src.constants import RE_INDEX, REQUIRED_EXTS, INPUT_DIR, qa_prompt_str, refine_prompt_str
 import phoenix as px
 from openinference.instrumentation.llama_index import LlamaIndexInstrumentor
 from opentelemetry.sdk.trace import TracerProvider
@@ -13,7 +13,24 @@ from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExport
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from llama_index.core.llms import ChatMessage, MessageRole
 from llama_index.core import ChatPromptTemplate
+from llama_index.llms.openai import OpenAI
+from pydantic_settings import BaseSettings, SettingsConfigDict
+import os
 
+
+class Config(BaseSettings):
+    env:str = os.getenv("ENV", "development")
+    env_file_path:str = ".env.development" 
+    
+    match env:
+        case "development":
+            env_file_path = ".env.development"
+        case "production":
+            env_file_path = ".env.production"
+    model_config = SettingsConfigDict(extra='allow', env_file=env_file_path)
+
+config = Config()
+config.mongo_uri = f"{config.db_host}:{config.db_port}"
 
 def setup_prompts():
     # Text QA Prompt
@@ -61,8 +78,15 @@ def setup_app(app: FastAPI):
         model_name="BAAI/bge-small-en-v1.5"
     )
 
-    llm = Ollama(model="llama3", request_timeout=600.0,
-                 temperature=0, base_url=LLM_BASE_URL)
+    match config.inference:
+        case "openai":
+            os.environ["OPENAI_API_KEY"] = config.openai_api_key
+            llm = OpenAI(model="gpt-4o-mini", request_timeout=600.0, temperature=0)
+        case "ollama":
+            llm = Ollama(model="llama3", request_timeout=600.0, temperature=0, base_url=config.llm_base_url)
+        case _:
+            raise ValueError("Unsupported inference model specified")
+        
     Settings.llm = llm
 
     reader = SimpleDirectoryReader(
@@ -72,8 +96,8 @@ def setup_app(app: FastAPI):
     )
 
     storage_context = StorageContext.from_defaults(
-        docstore=MongoDocumentStore.from_uri(uri=MONGO_URI),
-        index_store=MongoIndexStore.from_uri(uri=MONGO_URI)
+        docstore=MongoDocumentStore.from_uri(uri=config.mongo_uri),
+        index_store=MongoIndexStore.from_uri(uri=config.mongo_uri)
     )
 
     if RE_INDEX:
@@ -92,8 +116,8 @@ def setup_app(app: FastAPI):
         storage_context.persist()
     else:
         storage_context = StorageContext.from_defaults(
-            docstore=MongoDocumentStore.from_uri(uri=MONGO_URI),
-            index_store=MongoIndexStore.from_uri(uri=MONGO_URI)
+            docstore=MongoDocumentStore.from_uri(uri=config.mongo_uri),
+            index_store=MongoIndexStore.from_uri(uri=config.mongo_uri)
         )
         vector_index = load_index_from_storage(storage_context=storage_context)
 

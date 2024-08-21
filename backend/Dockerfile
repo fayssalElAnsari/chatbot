@@ -5,16 +5,18 @@ FROM python:3.11
 WORKDIR /server
 
 # 
-COPY ./requirements.txt /server/requirements.txt
+COPY ./requirements.txt /requirements.txt
 
 # 
-RUN pip install --no-cache-dir --upgrade -r /server/requirements.txt
+RUN pip install --no-cache-dir --upgrade -r /requirements.txt
 
 # Install Ollama
 RUN pip install ollama
 
 # 
 COPY ./app ./app
+
+COPY ./.env.production ./.env.production
 
 EXPOSE 27018
 
