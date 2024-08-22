@@ -5,7 +5,7 @@ from typing import Optional
 HF_TOKEN: Optional[str] = os.getenv("HUGGING_FACE_TOKEN", "your_huggingface_token")
 END_POINT_URL = "https://t8vw8vnwh9jwyf7r.us-east-1.aws.endpoints.huggingface.cloud"
 
-RE_INDEX = True
+RE_INDEX = False
 REQUIRED_EXTS = [".md", ".txt", ".html", ".htm", ".pdf", ".doc"]
 INPUT_DIR = "./app/data/sample"
 
