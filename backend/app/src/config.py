@@ -1,9 +1,7 @@
 from fastapi import FastAPI
-from llama_index.core import Settings, SimpleDirectoryReader, VectorStoreIndex, StorageContext, load_index_from_storage, set_global_handler
+from llama_index.core import Settings, SimpleDirectoryReader, VectorStoreIndex, StorageContext, set_global_handler
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.llms.ollama import Ollama
-from llama_index.storage.docstore.mongodb import MongoDocumentStore
-from llama_index.storage.index_store.mongodb import MongoIndexStore
 from llama_index.core.node_parser import SentenceSplitter
 from src.constants import RE_INDEX, REQUIRED_EXTS, INPUT_DIR, qa_prompt_str, refine_prompt_str
 import phoenix as px
@@ -16,6 +14,8 @@ from llama_index.core import ChatPromptTemplate
 from llama_index.llms.openai import OpenAI
 from pydantic_settings import BaseSettings, SettingsConfigDict
 import os
+import pymongo
+from llama_index.vector_stores.mongodb import MongoDBAtlasVectorSearch
 
 
 class Config(BaseSettings):
@@ -30,7 +30,7 @@ class Config(BaseSettings):
     model_config = SettingsConfigDict(extra='allow', env_file=env_file_path)
 
 config = Config()
-config.mongo_uri = f"{config.db_host}:{config.db_port}"
+config.mongo_atlas_uri = f"mongodb+srv://{config.mongodb_atlas_username}:{config.mongodb_atlas_password}@{config.mongodb_atlas_host}?retryWrites=true&w=majority"
 
 def setup_prompts():
     # Text QA Prompt
@@ -94,11 +94,14 @@ def setup_app(app: FastAPI):
         input_dir=INPUT_DIR,
         required_exts=REQUIRED_EXTS
     )
+    
+    mongodb_client = pymongo.MongoClient(config.mongo_atlas_uri)
 
-    storage_context = StorageContext.from_defaults(
-        docstore=MongoDocumentStore.from_uri(uri=config.mongo_uri),
-        index_store=MongoIndexStore.from_uri(uri=config.mongo_uri)
-    )
+    # Create an instance of MongoDBAtlasVectorSearch
+    vector_store = MongoDBAtlasVectorSearch(mongodb_client, db_name = config.mongodb_atlas_db_name,
+    collection_name = config.mongodb_atlas_collection_name, index_name = config.mongodb_atlas_index_name)
+    
+    storage_context = StorageContext.from_defaults(vector_store=vector_store)
 
     if RE_INDEX:
         all_docs = []
@@ -112,17 +115,12 @@ def setup_app(app: FastAPI):
         nodes = parser.get_nodes_from_documents(documents, show_progress=True)
 
         vector_index = VectorStoreIndex(
-            nodes=nodes, storage_context=storage_context)
-        storage_context.persist()
+            nodes=nodes, storage_context=storage_context, show_progress=True)
     else:
-        storage_context = StorageContext.from_defaults(
-            docstore=MongoDocumentStore.from_uri(uri=config.mongo_uri),
-            index_store=MongoIndexStore.from_uri(uri=config.mongo_uri)
-        )
-        vector_index = load_index_from_storage(storage_context=storage_context)
+        vector_index = VectorStoreIndex.from_vector_store(vector_store)
+
 
     (text_qa_template, refine_template) = setup_prompts()
-
     query_engine = vector_index.as_query_engine(
         text_qa_template=text_qa_template,
         refine_template=refine_template,
@@ -130,6 +128,3 @@ def setup_app(app: FastAPI):
 
     app.state.llm = llm
     app.state.query_engine = query_engine
-
-    # View the traces in the Phoenix UI
-    # px.active_session().url
