@@ -128,3 +128,4 @@ def setup_app(app: FastAPI):
 
     app.state.llm = llm
     app.state.query_engine = query_engine
+    app.state.vector_store = vector_store
