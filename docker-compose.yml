@@ -1,12 +1,6 @@
 version: '3.8'
 
-services:
-  # phoenix:
-  #     image: arizephoenix/phoenix:latest
-  #     ports:
-  #       - "6006:6006"  # UI and OTLP HTTP collector
-  #       - "4317:4317"  # OTLP gRPC collector
-        
+services:   
   server:
     build:
       context: ./backend
@@ -16,8 +10,6 @@ services:
       - "8000:8000"
     environment:
       - ENV=production
-    depends_on:
-      - mongodb
     networks:
       - chatbotnetwork
 
@@ -33,36 +25,6 @@ services:
       - server
     networks:
       - chatbotnetwork
-
-  mongodb:
-    image: mongo:latest
-    container_name: mongodb_server
-    ports:
-      - "27017:27017"
-    volumes:
-      - db_data:/data/db
-    networks:
-      - chatbotnetwork
-
-  ollama:
-    image: randomcitizen01/ollama-with-llama3:latest
-    container_name: ollama
-    ports:
-      - "11434:11434"
-    networks:
-      - chatbotnetwork
-    restart: always
-    healthcheck:
-      test: ["CMD", "ollama", "--version"]
-    command: serve
-    deploy:
-      resources:
-        limits:
-          cpus: '18.0'
-          memory: 14G
-        reservations:
-          cpus: '14.0'
-          memory: 12G
 
 volumes:
   db_data:

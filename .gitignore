@@ -238,3 +238,6 @@ ollama/ollama/models/blobs/*
 
 
 **/.env.*
+
+chatbot-server.tar
+chatbot-client.tar

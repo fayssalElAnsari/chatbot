@@ -3,6 +3,8 @@ import './Chatbot.css';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { atomDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { Button } from "@/components/ui/button"
+import UserNav from './UserNav'
 
 
 const Chatbot = () => {
@@ -62,45 +64,59 @@ const Chatbot = () => {
   };
 
   return (
-    <div className="chatbot-container">
-      <div className="chatbot-messages">
-        {messages.map((message, index) => (
-          <div key={index} className={`message ${message.user ? 'user-message' : 'ai-message'}`}>
-            <ReactMarkdown
-              children={message.text}
-              components={{
-                code({ node, inline, className, children, ...props }) {
-                  const match = /language-(\w+)/.exec(className || '');
-                  return !inline && match ? (
-                    <SyntaxHighlighter
-                      children={String(children).replace(/\n$/, '')}
-                      style={atomDark}
-                      language={match[1]}
-                      PreTag="div"
-                      {...props}
-                    />
-                  ) : (
-                    <code className={className} {...props}>
-                      {children}
-                    </code>
-                  );
-                }
-              }}
-            />
-
+    <>
+      <div className="hidden flex-col md:flex">
+        <div className="border-b">
+          <div className="flex h-16 items-center justify-between px-4">
+            <div className="ml-auto flex items-center space-x-4">
+              <UserNav />
+            </div>
           </div>
-        ))}
+        </div>
       </div>
-      <form className="chatbot-input-form" onSubmit={handleSubmit}>
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Type your message..."
-        />
-        <button type="submit">Send</button>
-      </form>
-    </div>
+
+
+      <div className="chatbot-container">
+        <div className="chatbot-messages">
+          {messages.map((message, index) => (
+            <div key={index} className={`message ${message.user ? 'user-message' : 'ai-message'}`}>
+              <ReactMarkdown
+                children={message.text}
+                components={{
+                  code({ node, inline, className, children, ...props }) {
+                    const match = /language-(\w+)/.exec(className || '');
+                    return !inline && match ? (
+                      <SyntaxHighlighter
+                        children={String(children).replace(/\n$/, '')}
+                        style={atomDark}
+                        language={match[1]}
+                        PreTag="div"
+                        {...props}
+                      />
+                    ) : (
+                      <code className={className} {...props}>
+                        {children}
+                      </code>
+                    );
+                  }
+                }}
+              />
+
+            </div>
+          ))}
+        </div>
+        <form className="chatbot-input-form" onSubmit={handleSubmit}>
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Type your message..."
+          />
+          <Button type="submit">Send</Button>
+          {/* <button type="submit">Send</button> */}
+        </form>
+      </div>
+    </>
   );
 };
 
